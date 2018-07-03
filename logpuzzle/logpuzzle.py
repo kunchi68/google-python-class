@@ -18,6 +18,10 @@ Here's what a puzzle url looks like:
 10.254.254.28 - - [06/Aug/2007:00:13:48 -0700] "GET /~foo/puzzle-bar-aaab.jpg HTTP/1.0" 302 528 "-" "Mozilla/5.0 (Windows; U; Windows NT 5.1; en-US; rv:1.8.1.6) Gecko/20070725 Firefox/2.0.0.6"
 """
 
+def urlKey(url):
+    match = re.search(r'-\w+-(\w+)\.jpg', url)
+    if match : return match.group(1)
+    return url
 
 def read_urls(filename):
   """Returns a list of the puzzle urls from the given log file,
@@ -32,27 +36,16 @@ def read_urls(filename):
   #print match.group(1)
   server_name = match.group(1)
 
-  dict = {}
   urls = []
   f = open(filename, 'rU')
   for line in f:
-      match = re.search(r'GET (\S+-\S+-(\S+)\.jpg) HTTP/1.0', line)
-      if match : 
-          pic = match.group(1)
-          w2 = match.group(2) 
-          #print match.group(2) 
-          if not pic in urls : dict[w2] = pic
-          continue
-
       match = re.search(r'GET (\S+\.jpg) HTTP/1.0', line)
       if match : 
           pic = match.group(1)
           if not pic in urls : urls.append(pic)
   f.close()
 
-  urls = sorted(urls)
-  keys = sorted(dict.keys())
-  for key in keys: urls.append(dict[key])
+  urls = sorted(urls, key=urlKey)
   urls = [ "http://" + server_name + url for url in urls]
   return urls
   
