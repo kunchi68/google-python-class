@@ -25,6 +25,36 @@ def read_urls(filename):
   Screens out duplicate urls and returns the urls sorted into
   increasing order."""
   # +++your code here+++
+  match = re.search(r'\w+_(.+)', filename)
+  if not match:
+      sys.stderr.write("Incorrect filename: " + filename + "\n");
+      sys.exit(1)
+  #print match.group(1)
+  server_name = match.group(1)
+
+  dict = {}
+  urls = []
+  f = open(filename, 'rU')
+  for line in f:
+      match = re.search(r'GET (\S+-\S+-(\S+)\.jpg) HTTP/1.0', line)
+      if match : 
+          pic = match.group(1)
+          w2 = match.group(2) 
+          #print match.group(2) 
+          if not pic in urls : dict[w2] = pic
+          continue
+
+      match = re.search(r'GET (\S+\.jpg) HTTP/1.0', line)
+      if match : 
+          pic = match.group(1)
+          if not pic in urls : urls.append(pic)
+  f.close()
+
+  urls = sorted(urls)
+  keys = sorted(dict.keys())
+  for key in keys: urls.append(dict[key])
+  urls = [ "http://" + server_name + url for url in urls]
+  return urls
   
 
 def download_images(img_urls, dest_dir):
@@ -36,7 +66,26 @@ def download_images(img_urls, dest_dir):
   Creates the directory if necessary.
   """
   # +++your code here+++
-  
+  # Create dest_dir if it does not exist.
+  if not os.path.exists(dest_dir) :
+      os.makedirs(dest_dir)
+
+  # Download image to dest_dir
+  num = 0
+  for url in img_urls:
+      dest_path = dest_dir + "/img" + str(num)
+      print("Retrieving %s to %s (%d/%d)" %(url, dest_path, num+1, len(img_urls)))
+      urllib.urlretrieve(url, dest_path)
+      num += 1
+
+  # Create index.html in dest_dir with image info.
+  f = open(dest_dir + "/index.html", "w")
+  f.write("<html><body>\n")
+  for i in range(num):
+      f.write('<img src="' + "img" + str(i)  + '">')
+  f.write("\n")
+  f.write("</body></html>\n")
+  f.close()
 
 def main():
   args = sys.argv[1:]
